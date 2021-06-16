@@ -83,19 +83,19 @@ def model_opts(parser):
               choices=['none', 'bert-base-cased', 'bert-base-uncased',
                        'bert-large-cased', 'bert-large-uncased',
                        'bert-base-multilingual-cased',
-                       'bert-base-chinese'],
+                       'bert-base-chinese', 'vinai/phobert-base'],
               help="""Type of BERT model.""")
     group.add('--enc_bert_type', '-enc_bert_type', type=str, default='none',
               choices=['none', 'bert-base-cased', 'bert-base-uncased',
                        'bert-large-cased', 'bert-large-uncased',
                        'bert-base-multilingual-cased',
-                       'bert-base-chinese'],
+                       'bert-base-chinese', 'vinai/phobert-base'],
               help="""Type of BERT model for encoder.""")
     group.add('--dec_bert_type', '-dec_bert_type', type=str, default='none',
               choices=['none', 'bert-base-cased', 'bert-base-uncased',
                        'bert-large-cased', 'bert-large-uncased',
                        'bert-base-multilingual-cased',
-                       'bert-base-chinese'],
+                       'bert-base-chinese', 'vinai/phobert-base'],
               help="""Type of BERT model for decoder.""")
 
     group.add('--bert_decoder_init_context', '-bert_decoder_init_context',
@@ -298,13 +298,13 @@ def preprocess_opts(parser):
               choices=['bert-base-cased', 'bert-base-uncased',
                        'bert-large-cased', 'bert-large-uncased',
                        'bert-base-multilingual-cased',
-                       'bert-base-chinese'],
+                       'bert-base-chinese', 'vinai/phobert-base'],
               help='Use bert preprocessing on src side.')
     group.add('--bert_tgt', '-bert_tgt', type=str, default=None,
               choices=['bert-base-cased', 'bert-base-uncased',
                        'bert-large-cased', 'bert-large-uncased',
                        'bert-base-multilingual-cased',
-                       'bert-base-chinese'],
+                       'bert-base-chinese', 'vinai/phobert-base'],
               help='Use bert preprocessing on tgt side.')
 
     # Data processing options

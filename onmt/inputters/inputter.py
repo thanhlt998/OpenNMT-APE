@@ -294,12 +294,12 @@ def _pad_vocab_to_multiple(vocab, multiple):
 def _build_field_vocab(field, counter, size_multiple=1, **kwargs):
     # TODO: clean this part
     if 'bert_tokenizer' in field.tokenize.keywords.keys():
-        vocab = field.tokenize.keywords['bert_tokenizer'].vocab
-        specials = list(vocab.keys())[:106]
+        vocab = field.tokenize.keywords['bert_tokenizer'].get_vocab()
+        specials = ['<s>', '<pad>', '</s>', '<unk>', ]
         counter = Counter()
         src_vocab_size = len(vocab)
-        logger.info('BERT vocab has %d tokens.' % src_vocab_size)
-        vocab_items = list(vocab.items())[106:]
+        logger.info(f'Bert vocab has {src_vocab_size} tokens')
+        vocab_items = [(k, v) for k, v in vocab.items() if k not in specials]
         for i, token in enumerate(vocab_items):
             # keep the order of tokens specified in the vocab file by
             # adding them to the counter with decreasing counting values

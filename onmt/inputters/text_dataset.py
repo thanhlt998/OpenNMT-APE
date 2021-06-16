@@ -12,32 +12,7 @@ from collections import OrderedDict
 
 from onmt.inputters.datareader_base import DataReaderBase
 
-
-class MyBertTokenizer(BertTokenizer):
-
-    def __init__(self, vocab_file, do_lower_case=False, max_len=None):
-        if not os.path.isfile(vocab_file):
-            raise ValueError(
-                "Can't find a vocabulary file at path '{}'."
-                "To load the vocabulary from a Google pretrained "
-                "model use "
-                "`tokenizer = "
-                "BertTokenizer.from_pretrained(PRETRAINED_MODEL_NAME)`".format(
-                    vocab_file))
-
-        self.vocab = tokenization.load_vocab(vocab_file)
-        self.ids_to_tokens = OrderedDict(
-            [(ids, tok) for tok, ids in self.vocab.items()])
-        self.wordpiece_tokenizer = WordpieceTokenizer(vocab=self.vocab)
-        self.max_len = max_len if max_len is not None else int(1e12)
-
-    def tokenize(self, text):
-        orig_tokens = tokenization.whitespace_tokenize(text)
-        split_tokens = []
-        for token in orig_tokens:
-            for sub_token in self.wordpiece_tokenizer.tokenize(token):
-                split_tokens.append(sub_token)
-        return split_tokens
+SPLIT_TOKEN = '<split>'
 
 
 class TextDataReader(DataReaderBase):
@@ -101,18 +76,9 @@ def _feature_tokenize(
     return tokens
 
 
-def _bert_tokenize(string, layer=0, truncate=None, bert_tokenizer=None):
-    tokens = bert_tokenizer.tokenize(string)
-    if '[SEP]' in tokens:
-        src_A = ' '.join(tokens).split(' [SEP] ')[0]
-        src_B = ' '.join(tokens).split(' [SEP] ')[1]
-        src_A_len = len(src_A.split())
-        src_B_len = len(src_B.split())
-        segments_ids = [0]*src_A_len + [1]*src_B_len
-        tokens = ' '.join([src_A, src_B]).split()
-    else:
-        segments_ids = [0]*len(tokens)
-
+def _bert_tokenize(string, layer=0, truncate=None, bert_tokenizer=None, max_len=256,):
+    tokens = bert_tokenizer.tokenize(string)[:max_len - 2]
+    segments_ids = [0] * (len(tokens) + 2)
     if layer == 1:
         tokens = segments_ids
     return tokens
@@ -230,31 +196,39 @@ def text_fields(**kwargs):
     fields_ = []
     feat_delim = u"￨" if n_feats > 0 else None
     if bert is not None:
-        bert_tokenizer = MyBertTokenizer.from_pretrained(
-                    bert)
+        from transformers import AutoTokenizer
+        bert_tokenizer = AutoTokenizer.from_pretrained(bert)
+        bert_tokenizer.add_tokens(SPLIT_TOKEN)
         tokenize = partial(
             _bert_tokenize,
             layer=0,
             truncate=truncate,
-            bert_tokenizer=bert_tokenizer)
-
+            bert_tokenizer=bert_tokenizer,
+        )
         feat = Field(
             pad_token=pad,
-            unk_token='[UNK]',
-            init_token=bos, eos_token=eos,
+            unk_token=bert_tokenizer.unk_token,
+            init_token=bert_tokenizer.bos_token,
+            eos_token=bert_tokenizer.eos_token,
             tokenize=tokenize,
-            include_lengths=include_lengths)
+            include_lengths=include_lengths,
+        )
         fields_.append((base_name, feat))
 
         tokenize = partial(
-                _bert_tokenize,
-                layer=1,
-                truncate=truncate,
-                bert_tokenizer=bert_tokenizer)
+            _bert_tokenize,
+            layer=1,
+            truncate=truncate,
+            bert_tokenizer=bert_tokenizer,
+        )
 
         segments_ids = Field(
-            use_vocab=False, tokenize=tokenize,
-            dtype=torch.long, pad_token=0, unk_token=None)
+            use_vocab=False,
+            tokenize=tokenize,
+            dtype=torch.long,
+            pad_token=0,
+            unk_token=None,
+        )
         fields_.append(('segments_ids', segments_ids))
     else:
         for i in range(n_feats + 1):
