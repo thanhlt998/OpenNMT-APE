@@ -1,4 +1,5 @@
-save_model: split_rephrase
+save_model: models/v2/checkpoints/split_rephrase
+log_file: models/v2/log/viwikisplit_bert.log
 
 data: models/v2/split_rephrase_v1
 train_steps: 50000

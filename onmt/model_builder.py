@@ -180,53 +180,15 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
         pad_idx = tgt_base_field.vocab.stoi[tgt_base_field.pad_token]
         generator = CopyGenerator(model_opt.dec_rnn_size, vocab_size, pad_idx)
 
-    # Load the model states from checkpoint or initialize them.
-    if checkpoint is not None:
-        # This preserves backward-compat for models using customed layernorm
-        def fix_key(s):
-            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.b_2',
-                       r'\1.layer_norm\2.bias', s)
-            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.a_2',
-                       r'\1.layer_norm\2.weight', s)
-            return s
-
-        checkpoint['model'] = {fix_key(k): v
-                               for k, v in checkpoint['model'].items()}
-        # end of patch for backward compatibility
-        model.load_state_dict(checkpoint['model'], strict=False)
-        generator.load_state_dict(checkpoint['generator'], strict=False)
-    elif model_opt.encoder_type != 'bert' or model_opt.decoder_type != 'bert':
-        if model_opt.param_init != 0.0:
-            for p in model.parameters():
-                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
-            for p in generator.parameters():
-                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
-        if model_opt.param_init_glorot:
-            for p in model.parameters():
-                if p.dim() > 1:
-                    xavier_uniform_(p)
-            for p in generator.parameters():
-                if p.dim() > 1:
-                    xavier_uniform_(p)
-
-        if (hasattr(model.encoder, 'embeddings')
-                and not model_opt.encoder_type == 'bert'):
-            model.encoder.embeddings.load_pretrained_vectors(
-                model_opt.pre_word_vecs_enc)
-        if (hasattr(model.decoder, 'embeddings')
-                and not model_opt.decoder_type == 'bert'):
-            model.decoder.embeddings.load_pretrained_vectors(
-                model_opt.pre_word_vecs_dec)
-
     if model_opt.encoder_type == 'bert' or model_opt.decoder_type == 'bert':
         if model_opt.bert_type != 'none':
             model_opt.enc_bert_type = model_opt.bert_type
             model_opt.dec_bert_type = model_opt.bert_type
 
-        if model_opt.enc_bert_type != 'none' and checkpoint is None:
+        if model_opt.enc_bert_type != 'none':
                 model.encoder.initialize_bert(model_opt.enc_bert_type)
 
-        if model_opt.dec_bert_type != 'none' and checkpoint is None:
+        if model_opt.dec_bert_type != 'none':
                 model.decoder.initialize_bert(model_opt.dec_bert_type)
 
         # Tie word embedding layer of encoder BERT and decoder
@@ -324,6 +286,44 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None, gpu_id=None):
                     decoder_layer.output.dense,
                     encoder_layer.output.dense,
                     share=True)
+
+    # Load the model states from checkpoint or initialize them.
+    if checkpoint is not None:
+        # This preserves backward-compat for models using customed layernorm
+        def fix_key(s):
+            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.b_2',
+                       r'\1.layer_norm\2.bias', s)
+            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.a_2',
+                       r'\1.layer_norm\2.weight', s)
+            return s
+
+        checkpoint['model'] = {fix_key(k): v
+                               for k, v in checkpoint['model'].items()}
+        # end of patch for backward compatibility
+        model.load_state_dict(checkpoint['model'], strict=False)
+        generator.load_state_dict(checkpoint['generator'], strict=False)
+    elif model_opt.encoder_type != 'bert' or model_opt.decoder_type != 'bert':
+        if model_opt.param_init != 0.0:
+            for p in model.parameters():
+                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
+            for p in generator.parameters():
+                p.data.uniform_(-model_opt.param_init, model_opt.param_init)
+        if model_opt.param_init_glorot:
+            for p in model.parameters():
+                if p.dim() > 1:
+                    xavier_uniform_(p)
+            for p in generator.parameters():
+                if p.dim() > 1:
+                    xavier_uniform_(p)
+
+        if (hasattr(model.encoder, 'embeddings')
+                and not model_opt.encoder_type == 'bert'):
+            model.encoder.embeddings.load_pretrained_vectors(
+                model_opt.pre_word_vecs_enc)
+        if (hasattr(model.decoder, 'embeddings')
+                and not model_opt.decoder_type == 'bert'):
+            model.decoder.embeddings.load_pretrained_vectors(
+                model_opt.pre_word_vecs_dec)
 
     model.generator = generator
     model.to(device)

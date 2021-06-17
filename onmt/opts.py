@@ -574,6 +574,7 @@ def train_opts(parser):
 
 def translate_opts(parser):
     """ Translation / inference options """
+    model_opts(parser)
     group = parser.add_argument_group('Model')
     group.add('--model', '-model', dest='models', metavar='MODEL',
               nargs='+', type=str, default=[], required=True,

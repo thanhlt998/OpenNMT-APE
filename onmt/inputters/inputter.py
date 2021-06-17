@@ -60,7 +60,7 @@ def get_fields(
     src_data_type,
     n_src_feats,
     n_tgt_feats,
-    pad='<blank>',
+    pad='<pad>',
     bos='<s>',
     eos='</s>',
     dynamic_dict=False,
@@ -112,7 +112,7 @@ def get_fields(
     if bert_src is not None:
         src_field_kwargs = {"n_feats": n_src_feats,
                             "include_lengths": True,
-                            "pad": '[PAD]', "bos": None, "eos": None,
+                            "pad": '<pad>', "bos": None, "eos": None,
                             "truncate": src_truncate,
                             "bert": bert_src,
                             "base_name": "src"}
@@ -127,7 +127,7 @@ def get_fields(
     if bert_tgt is not None:
         tgt_field_kwargs = {"n_feats": n_tgt_feats,
                             "include_lengths": False,
-                            "pad": '[PAD]', "bos": '<S>', "eos": '<T>',
+                            "pad": '<pad>', "bos": '<s>', "eos": '</s>',
                             "truncate": tgt_truncate,
                             "bert": bert_tgt,
                             "base_name": "tgt"}

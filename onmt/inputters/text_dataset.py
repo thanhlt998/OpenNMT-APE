@@ -188,7 +188,7 @@ def text_fields(**kwargs):
     n_feats = kwargs["n_feats"]
     include_lengths = kwargs["include_lengths"]
     base_name = kwargs["base_name"]
-    pad = kwargs.get("pad", "<blank>")
+    pad = kwargs.get("pad", "<pad>")
     bos = kwargs.get("bos", "<s>")
     eos = kwargs.get("eos", "</s>")
     bert = kwargs.get("bert", None)
